@@ -11,3 +11,89 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id            String                      @id @default(ulid())
+  username      String                      @unique
+  password      String                      @db.VarChar(64)
+  profile       Profile?
+  messages      Message[]
+  groups        Participants_conversation[]
+  notifications Notifications[]
+  friendFirst   Friendship[]                @relation("friendFirst")
+  friendSecond  Friendship[]                @relation("friendSecond")
+}
+
+model Profile {
+  id        String @id @default(cuid())
+  user      User   @relation(fields: [userId], references: [id])
+  userId    String @unique
+  lastName  String
+  firstName String
+  bio       String @db.Text
+}
+
+model Conversations {
+  id           String                      @id @default(cuid())
+  name         String                      @db.VarChar(255)
+  participants Participants_conversation[]
+  messages     Message[]
+}
+
+model Participants_conversation {
+  userId         String
+  user           User          @relation(fields: [userId], references: [id])
+  conversationId String
+  conversations  Conversations @relation(fields: [conversationId], references: [id])
+  role           Members_Role  @default(MEMBERS)
+  joined_at      DateTime      @default(now())
+
+  @@id([userId, conversationId])
+  @@map("Participants")
+}
+
+model Notifications {
+  id           String               @id @default(cuid())
+  notification String               @db.VarChar(255)
+  user         User                 @relation(fields: [userId], references: [id])
+  userId       String
+  createdAt    DateTime             @default(now())
+  status       Notifications_status @default(NOT_READ)
+}
+
+model Message {
+  id             String        @id @default(cuid())
+  message        String        @db.Text
+  user           User          @relation(references: [id], fields: [userId])
+  userId         String
+  conversationId String
+  conversation   Conversations @relation(fields: [conversationId], references: [id])
+  createdAt      DateTime      @default(now())
+}
+
+model Friendship {
+  userIdOne    String
+  friendFirst  User             @relation("friendFirst", fields: [userIdOne], references: [id])
+  userIdTwo    String
+  friendSecond User             @relation("friendSecond", fields: [userIdTwo], references: [id])
+  status       FriendshipStatus
+
+  @@id([userIdOne, userIdTwo])
+}
+
+enum FriendshipStatus {
+  REQ_UID1
+  REQ_UID2
+  FRIEND
+  BLOCKED
+}
+
+enum Notifications_status {
+  NOT_READ
+  READ
+}
+
+enum Members_Role {
+  ADMIN
+  MEMBERS
+}
