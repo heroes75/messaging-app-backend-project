@@ -3,8 +3,11 @@ const express = require('express')
 const cors = require('cors')
 const {createServer} = require('node:http')
 const { Server } = require('socket.io')
+const passport = require('passport')
+const jwtStrategy = require('./utils/jwt')
 const signupRouter = require('./routes/signupRouter')
 const loginRouter = require('./routes/loginRouter')
+const conversationRouter = require('./routes/conversationRouter')
 
 const app = express()
 const server = createServer(app)
@@ -17,6 +20,7 @@ const io = new Server(server, {
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 app.use(cors())
+passport.use(jwtStrategy)
 
 io.on('connection', (socket) => {
     console.log('a user connected')
@@ -24,6 +28,7 @@ io.on('connection', (socket) => {
 
 app.use('/signup', signupRouter)
 app.use('/login', loginRouter)
+app.use('/conversation', conversationRouter)
 
 server.listen(process.env.PORT, () => {
     console.log(`listen ot port  http://localhost:${process.env.PORT}`)

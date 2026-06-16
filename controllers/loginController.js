@@ -1,6 +1,7 @@
 const { body, validationResult, matchedData } = require("express-validator");
 const { prisma } = require("../lib/prisma");
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
+const jwt = require("jsonwebtoken");
 
 
 const usernameValidation = body('username')
@@ -31,7 +32,8 @@ async function loginController(req, res) {
         return res.json({msg: "incorrect password"})
     }
 
-    return res.json({user})
+    const token = jwt.sign({user}, process.env.SECRET_KEY)
+    return res.json({user, token})
  }
 
  module.exports = [passwordValidation, usernameValidation, loginController]
