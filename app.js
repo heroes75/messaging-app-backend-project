@@ -28,7 +28,7 @@ io.on('connection', (socket) => {
 
 app.use('/signup', signupRouter)
 app.use('/login', loginRouter)
-app.use('/conversation', conversationRouter)
+app.use('/conversation', passport.authenticate('jwt', {session: false}), conversationRouter)
 
 server.listen(process.env.PORT, () => {
     console.log(`listen ot port  http://localhost:${process.env.PORT}`)

@@ -13,20 +13,20 @@ datasource db {
 }
 
 model User {
-  id            String                      @id @default(ulid())
-  username      String                      @unique
-  password      String                      @db.VarChar(64)
+  id            String          @id @default(ulid())
+  username      String          @unique
+  password      String          @db.VarChar(64)
   profile       Profile?
   messages      Message[]
-  groups        Participants_conversation[]
+  conversations Participants[]
   notifications Notifications[]
-  friendFirst   Friendship[]                @relation("friendFirst")
-  friendSecond  Friendship[]                @relation("friendSecond")
+  friendFirst   Friendship[]    @relation("friendFirst")
+  friendSecond  Friendship[]    @relation("friendSecond")
 }
 
 model Profile {
   id        String @id @default(cuid())
-  user      User   @relation(fields: [userId], references: [id])
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String @unique
   lastName  String
   firstName String
@@ -34,28 +34,27 @@ model Profile {
 }
 
 model Conversations {
-  id           String                      @id @default(cuid())
-  name         String                      @db.VarChar(255)
-  participants Participants_conversation[]
+  id           String         @id @default(cuid())
+  name         String         @db.VarChar(255)
+  participants Participants[]
   messages     Message[]
 }
 
-model Participants_conversation {
+model Participants {
   userId         String
-  user           User          @relation(fields: [userId], references: [id])
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   conversationId String
-  conversations  Conversations @relation(fields: [conversationId], references: [id])
+  conversations  Conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           Members_Role  @default(MEMBERS)
   joined_at      DateTime      @default(now())
 
   @@id([userId, conversationId])
-  @@map("Participants")
 }
 
 model Notifications {
   id           String               @id @default(cuid())
   notification String               @db.VarChar(255)
-  user         User                 @relation(fields: [userId], references: [id])
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
   createdAt    DateTime             @default(now())
   status       Notifications_status @default(NOT_READ)
@@ -64,18 +63,18 @@ model Notifications {
 model Message {
   id             String        @id @default(cuid())
   message        String        @db.Text
-  user           User          @relation(references: [id], fields: [userId])
+  user           User          @relation(references: [id], fields: [userId], onDelete: Cascade)
   userId         String
   conversationId String
-  conversation   Conversations @relation(fields: [conversationId], references: [id])
+  conversation   Conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   createdAt      DateTime      @default(now())
 }
 
 model Friendship {
   userIdOne    String
-  friendFirst  User             @relation("friendFirst", fields: [userIdOne], references: [id])
+  friendFirst  User             @relation("friendFirst", fields: [userIdOne], references: [id], onDelete: Cascade)
   userIdTwo    String
-  friendSecond User             @relation("friendSecond", fields: [userIdTwo], references: [id])
+  friendSecond User             @relation("friendSecond", fields: [userIdTwo], references: [id], onDelete: Cascade)
   status       FriendshipStatus
 
   @@id([userIdOne, userIdTwo])

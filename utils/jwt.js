@@ -1,4 +1,3 @@
-require('dotenv').config()
 const passport = require('passport');
 const { prisma } = require('../lib/prisma');
 
@@ -20,6 +19,6 @@ module.exports = new JwtStrategy(opts, async function(jwt_payload, done) {
         }
     })
 
-    if(!user) return done(null, user)
+    if(!user) return done(null, false)
     return done(null, user)
 })

@@ -11,6 +11,7 @@ const usernameValidation = body('username')
 const passwordValidation = body('password')
     .trim()
     .notEmpty().withMessage('Your password must not be empty')
+    
 async function loginController(req, res) {
     const result = validationResult(req)
     const errors = result.array()
@@ -32,7 +33,7 @@ async function loginController(req, res) {
         return res.json({msg: "incorrect password"})
     }
 
-    const token = jwt.sign({user}, process.env.SECRET_KEY)
+    const token = jwt.sign({user}, process.env.SECRET_KEY, {expiresIn: "3h"})
     return res.json({user, token})
  }
 
