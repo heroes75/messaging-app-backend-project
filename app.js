@@ -8,6 +8,7 @@ const jwtStrategy = require('./utils/jwt')
 const signupRouter = require('./routes/signupRouter')
 const loginRouter = require('./routes/loginRouter')
 const conversationRouter = require('./routes/conversationRouter')
+const friendshipRouter = require('./routes/friendshipRouter')
 
 const app = express()
 const server = createServer(app)
@@ -29,6 +30,7 @@ io.on('connection', (socket) => {
 app.use('/signup', signupRouter)
 app.use('/login', loginRouter)
 app.use('/conversation', passport.authenticate('jwt', {session: false}), conversationRouter)
+app.use('/friendship', passport.authenticate('jwt', {session: false}), friendshipRouter)
 
 server.listen(process.env.PORT, () => {
     console.log(`listen ot port  http://localhost:${process.env.PORT}`)

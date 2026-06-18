@@ -9,7 +9,6 @@ opts.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken();
 opts.secretOrKey = process.env.SECRET_KEY;
 
 module.exports = new JwtStrategy(opts, async function(jwt_payload, done) {
-    console.log('jwt_payload:', jwt_payload)
     const user = await prisma.user.findUnique({
         where: {
             id: jwt_payload.user.id

@@ -41,6 +41,16 @@ async function createConversation(req, res) {
             },
         },
     });
+
+    const notifications = await prisma.notifications.create({
+        data: {
+            notification: `${user.username} open a conversation with you`,
+            user: {
+                connect: {id: participantId}
+            }
+        },
+    })
+
     res.json({conversation, msg: 'new conversation created'})
 }
 
