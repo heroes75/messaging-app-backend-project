@@ -33,7 +33,7 @@ async function loginController(req, res) {
         return res.json({msg: "incorrect password"})
     }
 
-    const token = jwt.sign({user}, process.env.SECRET_KEY, {expiresIn: "3h"})
+    const token = jwt.sign({user}, process.env.SECRET_KEY, {expiresIn: "1d"})
     return res.json({user, token})
  }
 

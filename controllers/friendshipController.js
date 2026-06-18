@@ -61,7 +61,7 @@ async function updateFriendship(req, res) {
             },
         },
     });
-    if ((userIdOne === user.id && friendship.status === 'REQ_UID2') || (userIdTwo === user.id && friendship.status === 'REQ_UID1')) {
+    if ((userIdOne === user.id && friendship.status !== 'REQ_UID1') || (userIdTwo === user.id && friendship.status !== 'REQ_UID2')) {
         const updateFriendship = await prisma.friendship.update({
             where: {
                 userIdOne_userIdTwo: {
@@ -71,6 +71,12 @@ async function updateFriendship(req, res) {
             },
             data: {
                 status: friendshipStatus
+            }
+        })
+        const notification = await prisma.notifications.create({
+            data: {
+                userId: friendshipId,
+                notification: `your friendship status with ${user.username} is ${friendshipStatus} `
             }
         })
         return res.json({msg: updateFriendship})
