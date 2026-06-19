@@ -5,6 +5,7 @@ const { createMessage, editMessage, deleteMessage } = require('../controllers/me
 
 const conversationRouter = Router()
 
+conversationRouter.get('/', conversationController.getAllConversations)
 conversationRouter.post('/', conversationController.createConversation)
 conversationRouter.get('/:conversationId', conversationController.readConversation)
 conversationRouter.delete('/:conversationId', conversationController.deleteConversation)

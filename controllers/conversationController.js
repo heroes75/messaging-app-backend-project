@@ -62,8 +62,12 @@ async function readConversation(req, res) {
         },
         include: {
             participants: true,
-            messages: true
-        }
+            messages: {
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            }
+        },
     })
 
     if (!conversation) {
@@ -94,8 +98,36 @@ async function deleteConversation(req, res) {
     
 }
 
+async function getAllConversations(req, res) {
+    const user = req.user
+    const conversations = await prisma.conversations.findMany({
+        where: {
+            participants: {
+                some: {
+                    userId: user.id,
+                },
+            },
+        },
+        include: {
+            participants: {
+                where: {
+                    NOT: {
+                        userId: user.id,
+                    },
+                },
+                include: {
+                    user: true
+                }
+            },
+        },
+    });
+
+    res.json({conversations})
+}
+
 module.exports = {
     createConversation,
     readConversation,
-    deleteConversation
+    deleteConversation,
+    getAllConversations,
 }

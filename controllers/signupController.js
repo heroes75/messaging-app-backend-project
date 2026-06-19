@@ -6,27 +6,37 @@ const bcrypt = require('bcryptjs')
 const sameUsernameError = 'this username already exist'
 const confirmPasswordError = 'Your confirm Password must be equal to your password'
 
-const usernameValidate = body('username')
-                            .trim()
-                            .isAlphanumeric().withMessage('Your username must be alphanumeric')
-                            .isLength({min: 3}).withMessage('Your username must overflow 3 characters')
-                            .custom(async (value, {req}) => {
-                                const username = await prisma.user.findUnique({
-                                    where: {
-                                        username: value
-                                    }
-                                })
-                                if(username) {
-                                    throw new Error(sameUsernameError)
-                                }
-                            }).withMessage(sameUsernameError)
-const passwordValidation = body('password')
-                            .trim()
-                            .isLength({min: 8}).withMessage('Your password must overflow 8 characters')
-                            .matches(/\d+/g).withMessage('your password must contains at least one number')
-                            .matches(/[A-Z]+/g).withMessage('your password must contains at least one Upper-case')
-                            .matches(/[a-z]+/g).withMessage('your password must contains at least one Lower-case')
-                            .matches(/\W+/g).withMessage('your password must contains at least one non-alphanumeric character')
+const usernameValidate = body("username")
+    .trim()
+    .isAlphanumeric()
+    .withMessage("Your username must be alphanumeric")
+    .isLength({ min: 3 })
+    .withMessage("Your username must overflow 3 characters")
+    .custom(async (value, { req }) => {
+        const username = await prisma.user.findUnique({
+            where: {
+                username: value,
+            },
+        });
+        if (username) {
+            throw new Error(sameUsernameError);
+        }
+    })
+    .withMessage(sameUsernameError);
+const passwordValidation = body("password")
+    .trim()
+    .isLength({ min: 8 })
+    .withMessage("Your password must overflow 8 characters")
+    .matches(/\d+/g)
+    .withMessage("your password must contains at least one number")
+    .matches(/[A-Z]+/g)
+    .withMessage("your password must contains at least one Upper-case")
+    .matches(/[a-z]+/g)
+    .withMessage("your password must contains at least one Lower-case")
+    .matches(/\W+/g)
+    .withMessage(
+        "your password must contains at least one non-alphanumeric character",
+    );
 const confirmPasswordValidation = body('confirmPassword')
     .trim()
     .custom((value, {req}) => {
