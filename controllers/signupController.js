@@ -12,7 +12,7 @@ const usernameValidate = body("username")
     .withMessage("Your username must be alphanumeric")
     .isLength({ min: 3 })
     .withMessage("Your username must overflow 3 characters")
-    .custom(async (value, { req }) => {
+    .custom(async (value) => {
         const username = await prisma.user.findUnique({
             where: {
                 username: value,
@@ -23,6 +23,7 @@ const usernameValidate = body("username")
         }
     })
     .withMessage(sameUsernameError);
+
 const passwordValidation = body("password")
     .trim()
     .isLength({ min: 8 })
@@ -37,6 +38,7 @@ const passwordValidation = body("password")
     .withMessage(
         "your password must contains at least one non-alphanumeric character",
     );
+    
 const confirmPasswordValidation = body('confirmPassword')
     .trim()
     .custom((value, {req}) => {
@@ -49,14 +51,10 @@ const confirmPasswordValidation = body('confirmPassword')
 
 async function signupController(req, res) {
     const result = validationResult(req)
-    console.log('req:', req.body)
+    console.log('result:', req.body)
     const errors = result.errors
-    console.log('result.array:', result.array())
-    console.log('errors:', errors)
-
-    console.log('!errors.isEmpty:', !errors.isEmpty)
     if (!result.isEmpty()) {
-        return res.json({msg: errors.map(error => error.msg)})
+        return res.status(401).json({msg: errors.map(error => error.msg)})
     }
     const {username, password} = matchedData(req)
     const hashedPassword = bcrypt.hashSync(password, 10)
