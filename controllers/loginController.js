@@ -26,11 +26,11 @@ async function loginController(req, res) {
         },
     })
     if (!user) {
-        return res.json({msg: 'incorrect username'})
+        return res.json({msg: ['incorrect username']})
     }
     const comparePassword = bcrypt.compareSync(password, user.password)
     if(!comparePassword) {
-        return res.json({msg: "incorrect password"})
+        return res.json({msg: ["incorrect password"]})
     }
 
     const token = jwt.sign({user}, process.env.SECRET_KEY, {expiresIn: "1d"})

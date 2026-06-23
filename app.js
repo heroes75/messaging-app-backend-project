@@ -10,6 +10,8 @@ const loginRouter = require('./routes/loginRouter')
 const conversationRouter = require('./routes/conversationRouter')
 const friendshipRouter = require('./routes/friendshipRouter')
 const notificationRouter = require('./routes/notificationRouter')
+const homeRouter = require('./routes/homeRouter')
+const verifyToken = require('./utils/verifyToken')
 
 const app = express()
 const server = createServer(app)
@@ -28,6 +30,7 @@ io.on('connection', (socket) => {
     console.log('a user connected')
 })
 
+app.use('/', homeRouter)
 app.use('/signup', signupRouter)
 app.use('/login', loginRouter)
 app.use('/conversation', passport.authenticate('jwt', {session: false}), conversationRouter)
