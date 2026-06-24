@@ -3,17 +3,24 @@ const { prisma } = require("../lib/prisma");
 
 async function getAllFriends(req, res) {
     const user = req.user
-    const userInfo = await prisma.user.findMany({
+    const allFriends = await prisma.friendship.findMany({
         where: {
-            id: user.id
+            OR: [
+                {userIdOne: user.id},
+                {userIdTwo: user.id},
+            ]
         },
         include: {
             friendFirst: true,
             friendSecond: true
         }
     })
-    const [allFriends] = userInfo
-    res.json({msg: allFriends.friendFirst.concat(allFriends.friendSecond)})
+    const [Friends] = allFriends
+    for (const friend of allFriends) {
+        friend.friend = [friend.friendFirst, friend.friendSecond].filter(friend => friend.id !== user.id)
+    }
+    
+    res.json({friends: allFriends})
 }
 
 async function askFriend(req, res) {

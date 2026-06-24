@@ -11,7 +11,9 @@ module.exports = async function homeController(req, res) {
         include: {
             conversations: true,
             friendFirst: true,
-            friendSecond: true
+            friendSecond: true,
+            profile: true,
+            notifications: true,
         }
     })
     res.json({user})
