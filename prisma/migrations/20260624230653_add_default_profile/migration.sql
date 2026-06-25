@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Profile" ADD COLUMN     "imageUrl" VARCHAR(255) NOT NULL DEFAULT '',
+ALTER COLUMN "lastName" SET DEFAULT '',
+ALTER COLUMN "firstName" SET DEFAULT '',
+ALTER COLUMN "bio" SET DEFAULT '';

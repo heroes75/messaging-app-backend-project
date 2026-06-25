@@ -28,9 +28,10 @@ model Profile {
   id        String @id @default(cuid())
   user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String @unique
-  lastName  String
-  firstName String
-  bio       String @db.Text
+  imageUrl  String @db.VarChar(255) @default("")
+  lastName  String @default("")
+  firstName String @default("") 
+  bio       String @db.Text @default("")
 }
 
 model Conversations {

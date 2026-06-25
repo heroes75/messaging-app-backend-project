@@ -3,7 +3,7 @@ const { readProfile, updateProfile, createProfile } = require("../controllers/pr
 
 const profileRouter = Router()
 
-profileRouter.get('/', createProfile)
+profileRouter.post('/', createProfile)
 profileRouter.get('/:profileId', readProfile)
 profileRouter.put('/:profileId', updateProfile)
 
