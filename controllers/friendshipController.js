@@ -52,7 +52,7 @@ async function askFriend(req, res) {
         }
     })
 
-    res.json({msg: FriendDemand})
+    res.json({friendship: FriendDemand})
 }
 
 async function updateFriendship(req, res) {

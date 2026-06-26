@@ -26,7 +26,7 @@ async function createConversation(req, res) {
 
     if (oldConversation) {
         return res.json({
-            msg: 'This conversation already exist'
+            error: 'This conversation already exist'
         })
     }
 

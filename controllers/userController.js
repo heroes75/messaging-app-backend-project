@@ -24,7 +24,13 @@ async function searchUser(req, res) {
                         contains: username
                     }
                 }
-            ]
+            ],
+            NOT: {
+                id: user.id
+            }
+        },
+        omit: {
+            password: true,
         },
         include: {
             friendFirst: {
