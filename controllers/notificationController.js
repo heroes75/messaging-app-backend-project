@@ -11,7 +11,7 @@ async function getAllNotifications(req, res) {
             createdAt: 'desc'
         }
     })
-    res.json({msg: notifications})
+    res.json({notifications})
 }
 
 async function deleteNotif(req, res) {

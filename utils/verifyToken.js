@@ -8,7 +8,14 @@ module.exports = function verifyToken(req, res, next) {
         return res.json({user: undefined})
     }
     jwt.verify(token, process.env.SECRET_KEY, function(err, state) {
-        if(err) next(err)
+        if(err){
+            console.error('err:', err.message)
+            if(err.message === 'jwt expired') {
+                req.user = undefined
+                return next()
+            }
+             return next(err)
+            }
         req.user = state.user
         next()
     })
