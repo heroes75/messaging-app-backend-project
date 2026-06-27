@@ -64,7 +64,7 @@ async function readConversation(req, res) {
             participants: true,
             messages: {
                 orderBy: {
-                    createdAt: 'desc'
+                    createdAt: 'asc'
                 }
             }
         },
