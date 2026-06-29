@@ -4,96 +4,105 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
+    provider = "prisma-client-js"
+    output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
 model User {
-  id            String          @id @default(ulid())
-  username      String          @unique
-  password      String          @db.VarChar(64)
-  profile       Profile?
-  messages      Message[]
-  conversations Participants[]
-  notifications Notifications[]
-  friendFirst   Friendship[]    @relation("friendFirst")
-  friendSecond  Friendship[]    @relation("friendSecond")
+    id            String          @id @default(ulid())
+    username      String          @unique
+    password      String          @db.VarChar(64)
+    profile       Profile?
+    messages      Message[]
+    conversations Participants[]
+    notifications Notifications[]
+    friendFirst   Friendship[]    @relation("friendFirst")
+    friendSecond  Friendship[]    @relation("friendSecond")
 }
 
 model Profile {
-  id        String @id @default(cuid())
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String @unique
-  imageUrl  String @db.VarChar(255) @default("")
-  lastName  String @default("")
-  firstName String @default("") 
-  bio       String @db.Text @default("")
+    id        String @id @default(cuid())
+    user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String @unique
+    imageUrl  String @default("") @db.VarChar(255)
+    lastName  String @default("")
+    firstName String @default("")
+    bio       String @default("") @db.Text
 }
 
 model Conversations {
-  id           String         @id @default(cuid())
-  name         String         @db.VarChar(255)
-  participants Participants[]
-  messages     Message[]
+    id           String         @id @default(cuid())
+    name         String         @db.VarChar(255)
+    participants Participants[]
+    messages     Message[]
 }
 
 model Participants {
-  userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  conversationId String
-  conversations  Conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  role           Members_Role  @default(MEMBERS)
-  joined_at      DateTime      @default(now())
+    userId         String
+    user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+    conversationId String
+    conversations  Conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+    role           Members_Role  @default(MEMBERS)
+    joined_at      DateTime      @default(now())
 
-  @@id([userId, conversationId])
+    @@id([userId, conversationId])
 }
 
 model Notifications {
-  id           String               @id @default(cuid())
-  notification String               @db.VarChar(255)
-  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
-  createdAt    DateTime             @default(now())
-  status       Notifications_status @default(NOT_READ)
+    id           String               @id @default(cuid())
+    notification String               @db.VarChar(255)
+    user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId       String
+    createdAt    DateTime             @default(now())
+    status       Notifications_status @default(NOT_READ)
 }
 
 model Message {
-  id             String        @id @default(cuid())
-  message        String        @db.Text
-  user           User          @relation(references: [id], fields: [userId], onDelete: Cascade)
-  userId         String
-  conversationId String
-  conversation   Conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  createdAt      DateTime      @default(now())
+    id             String        @id @default(cuid())
+    message        String        @db.Text
+    user           User          @relation(references: [id], fields: [userId], onDelete: Cascade)
+    userId         String
+    conversationId String
+    conversation   Conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+    createdAt      DateTime      @default(now())
+    MessageAttachments MessageAttachment[]
+}
+
+model MessageAttachment {
+    id String @id @default(cuid())
+    messageId String @unique
+    message Message @relation(fields: [messageId], references: [id])
+    attachmentUrl String
+    attachmentType String
 }
 
 model Friendship {
-  userIdOne    String
-  friendFirst  User             @relation("friendFirst", fields: [userIdOne], references: [id], onDelete: Cascade)
-  userIdTwo    String
-  friendSecond User             @relation("friendSecond", fields: [userIdTwo], references: [id], onDelete: Cascade)
-  status       FriendshipStatus
+    userIdOne    String
+    friendFirst  User             @relation("friendFirst", fields: [userIdOne], references: [id], onDelete: Cascade)
+    userIdTwo    String
+    friendSecond User             @relation("friendSecond", fields: [userIdTwo], references: [id], onDelete: Cascade)
+    status       FriendshipStatus
 
-  @@id([userIdOne, userIdTwo])
+    @@id([userIdOne, userIdTwo])
 }
 
 enum FriendshipStatus {
-  REQ_UID1
-  REQ_UID2
-  FRIEND
-  BLOCKED
+    REQ_UID1
+    REQ_UID2
+    FRIEND
+    BLOCKED
 }
 
 enum Notifications_status {
-  NOT_READ
-  READ
+    NOT_READ
+    READ
 }
 
 enum Members_Role {
-  ADMIN
-  MEMBERS
+    ADMIN
+    MEMBERS
 }

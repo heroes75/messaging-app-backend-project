@@ -8,7 +8,12 @@ async function createMessage(req, res) {
     const {message} = req.body
     const conversation = await prisma.conversations.findUnique({
         where: {
-            id: conversationId
+            id: conversationId,
+            participants: {
+                some: {
+                    userId: user.id
+                }
+            }
         },
         include: {
             participants: true
