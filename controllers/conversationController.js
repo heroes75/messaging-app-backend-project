@@ -65,6 +65,9 @@ async function readConversation(req, res) {
             messages: {
                 orderBy: {
                     createdAt: 'asc'
+                },
+                include: {
+                    MessageAttachments: true
                 }
             }
         },

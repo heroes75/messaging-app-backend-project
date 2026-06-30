@@ -1,11 +1,20 @@
+const { body, validationResult, matchedData } = require("express-validator")
 const { prisma } = require("../lib/prisma")
 
 
+const validateMessage = body("message").notEmpty().isString().withMessage("your message must be a string");
+const validateFiles = body("file").optional().isObject().withMessage("your files must be an object");
 async function createMessage(req, res) {
     const user = req.user
     const {conversationId} = req.params
     console.log('conversationId:', conversationId)
-    const {message} = req.body
+    const result = validationResult(req)
+    const errors = result.array()
+    if (!result.isEmpty()) {
+        return res.status(401).json({msg: errors})
+    }
+    const {message, file} = matchedData(req)
+    console.log('message, file:', message, file)
     const conversation = await prisma.conversations.findUnique({
         where: {
             id: conversationId,
@@ -22,13 +31,7 @@ async function createMessage(req, res) {
 
     if(!conversation) return res.status(404).json({msg: "this conversation doesn\'t exits"})
     
-    const createdMessage = await prisma.message.create({
-        data: {
-            message,
-            conversationId,
-            userId: user.id
-        }
-    })
+    
 
     const otherUsers = conversation.participants.filter(participant => participant.userId !== user.id).map(participant => ({id: participant.userId}))
     const notification = await prisma.notifications.create({
@@ -38,6 +41,41 @@ async function createMessage(req, res) {
         }
     })
 
+    if (file) {
+        console.log('file:', file)
+        const createdMessage = await prisma.message.create({
+            data: {
+                message,
+                conversationId,
+                userId: user.id,
+                MessageAttachments: {
+                    create: {
+                        attachmentUrl: file.url,
+                        attachmentType: file.format,
+                        attachmentName: file.original_filename
+,
+                    },
+                },
+            },
+            include: {
+                MessageAttachments: true,
+            },
+        });
+        return res.json({ message: createdMessage });
+    }
+
+    const createdMessage = await prisma.message.create({
+        data: {
+            message,
+            conversationId,
+            userId: user.id,
+        },
+        include: {
+            MessageAttachments: true
+        }
+    })
+
+    console.log('createdMessage:', createdMessage)
     res.json({message: createdMessage})
 }
 
@@ -105,6 +143,8 @@ async function deleteMessage(req, res) {
 }
 
 module.exports = {
+    validateMessage,
+    validateFiles,
     createMessage,
     editMessage,
     deleteMessage

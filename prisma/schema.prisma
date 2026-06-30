@@ -62,22 +62,23 @@ model Notifications {
 }
 
 model Message {
-    id             String        @id @default(cuid())
-    message        String        @db.Text
-    user           User          @relation(references: [id], fields: [userId], onDelete: Cascade)
-    userId         String
-    conversationId String
-    conversation   Conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-    createdAt      DateTime      @default(now())
+    id                 String              @id @default(cuid())
+    message            String              @db.Text
+    user               User                @relation(references: [id], fields: [userId], onDelete: Cascade)
+    userId             String
+    conversationId     String
+    conversation       Conversations       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+    createdAt          DateTime            @default(now())
     MessageAttachments MessageAttachment[]
 }
 
 model MessageAttachment {
-    id String @id @default(cuid())
-    messageId String @unique
-    message Message @relation(fields: [messageId], references: [id])
-    attachmentUrl String
+    id             String  @id @default(cuid())
+    messageId      String  @unique
+    message        Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+    attachmentUrl  String
     attachmentType String
+    attachmentName String
 }
 
 model Friendship {
