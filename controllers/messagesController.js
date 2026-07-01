@@ -50,10 +50,9 @@ async function createMessage(req, res) {
                 userId: user.id,
                 MessageAttachments: {
                     create: {
-                        attachmentUrl: file.url,
+                        attachmentUrl: file.eager[0].url,
                         attachmentType: file.format,
-                        attachmentName: file.original_filename
-,
+                        attachmentName: file.original_filename,
                     },
                 },
             },

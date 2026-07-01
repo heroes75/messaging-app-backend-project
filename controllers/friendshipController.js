@@ -3,24 +3,27 @@ const { prisma } = require("../lib/prisma");
 
 async function getAllFriends(req, res) {
     const user = req.user
-    const allFriends = await prisma.friendship.findMany({
+    const friendsSecond = await prisma.friendship.findMany({
         where: {
-            OR: [
-                {userIdOne: user.id},
-                {userIdTwo: user.id},
-            ]
+                userIdOne: user.id
         },
         include: {
-            friendFirst: true,
             friendSecond: true
         }
     })
-    const [Friends] = allFriends
-    for (const friend of allFriends) {
-        friend.friend = [friend.friendFirst, friend.friendSecond].filter(friend => friend.id !== user.id)
-    }
+    const friendsFirst = await prisma.friendship.findMany({
+        where: {
+                userIdTwo: user.id
+        },
+        include: {
+            friendFirst: true
+        }
+    })
     
-    res.json({friends: allFriends})
+    
+    console.log('FriendsFirst:', friendsFirst)
+    console.log('FriendsSecond:', friendsSecond)
+    res.json({friendsFirst, friendsSecond})
 }
 
 async function askFriend(req, res) {
@@ -86,7 +89,7 @@ async function updateFriendship(req, res) {
                 notification: `your friendship status with ${user.username} is ${friendshipStatus} `
             }
         })
-        return res.json({msg: updateFriendship})
+        return res.json({friendship: updateFriendship})
     }
 
     res.status(401).json({error: 'Unauthorized'})

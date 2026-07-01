@@ -7,22 +7,24 @@ async function createConversation(req, res) {
     const oldConversation = await prisma.conversations.findFirst({
         where: {
             AND: [
-                {
-                    participants: {
+                    {participants: {
                         some: {
                             userId: user.id,
                         },
-                    },
-                    participants: {
+                    },},
+                    {participants: {
                         some: {
                             userId: participantId,
                         },
-                    },
-
-                },
+                    },}
             ],
         },
+        include: {
+            participants: true
+        }
     });
+
+    console.log('oldConversation:', oldConversation)
 
     if (oldConversation) {
         return res.json({
@@ -40,6 +42,9 @@ async function createConversation(req, res) {
                 ],
             },
         },
+        include: {
+            participants: true
+        }
     });
 
     const notifications = await prisma.notifications.create({
@@ -51,6 +56,7 @@ async function createConversation(req, res) {
         },
     })
 
+    console.log('conversation:', conversation)
     res.json({conversation, msg: 'new conversation created'})
 }
 
@@ -103,6 +109,7 @@ async function deleteConversation(req, res) {
 
 async function getAllConversations(req, res) {
     const user = req.user
+    console.log('user:', user)
     const conversations = await prisma.conversations.findMany({
         where: {
             participants: {
@@ -125,6 +132,7 @@ async function getAllConversations(req, res) {
         },
     });
 
+    console.log('conversations:', conversations)
     res.json({conversations})
 }
 
