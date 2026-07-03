@@ -14,6 +14,7 @@ const homeRouter = require('./routes/homeRouter')
 const verifyToken = require('./utils/verifyToken')
 const profileRouter = require('./routes/profileRouter')
 const searchUserRouter = require('./routes/searchUserRouter')
+const groupRouter = require('./routes/groupRouter')
 
 const app = express()
 const server = createServer(app)
@@ -40,6 +41,7 @@ app.use('/friendship', passport.authenticate('jwt', {session: false}), friendshi
 app.use('/notification', passport.authenticate('jwt', {session: false}), notificationRouter)
 app.use('/profile', passport.authenticate('jwt', {session: false}), profileRouter)
 app.use('/user', passport.authenticate('jwt', {session: false}), searchUserRouter)
+app.use('/groups', passport.authenticate('jwt', {session: false}), groupRouter)
 
 server.listen(process.env.PORT, () => {
     console.log(`listen ot port  http://localhost:${process.env.PORT}`)

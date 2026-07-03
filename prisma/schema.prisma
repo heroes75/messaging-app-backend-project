@@ -37,6 +37,7 @@ model Profile {
 model Conversations {
     id           String         @id @default(cuid())
     name         String         @db.VarChar(255)
+    isGroup      Boolean        @default(false)
     participants Participants[]
     messages     Message[]
 }

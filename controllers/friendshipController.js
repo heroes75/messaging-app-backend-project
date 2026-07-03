@@ -81,6 +81,10 @@ async function updateFriendship(req, res) {
             },
             data: {
                 status: friendshipStatus
+            },
+            include: {
+                friendFirst: true,
+                friendSecond: true,
             }
         })
         const notification = await prisma.notifications.create({
