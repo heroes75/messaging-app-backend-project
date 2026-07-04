@@ -4,6 +4,8 @@ const { prisma } = require("../lib/prisma")
 
 const validateMessage = body("message").notEmpty().isString().withMessage("your message must be a string");
 const validateFiles = body("file").optional().isObject().withMessage("your files must be an object");
+
+
 async function createMessage(req, res) {
     const user = req.user
     const {conversationId} = req.params
@@ -31,14 +33,13 @@ async function createMessage(req, res) {
 
     if(!conversation) return res.status(404).json({msg: "this conversation doesn\'t exits"})
     
-    
-
-    const otherUsers = conversation.participants.filter(participant => participant.userId !== user.id).map(participant => ({id: participant.userId}))
-    const notification = await prisma.notifications.create({
-        data: {
-            notification: `${user.username} send you a message`,
-            user: {connect: otherUsers.length === 1 ? otherUsers[0] : otherUsers}
-        }
+    const otherUsers = conversation.participants.filter(participant => participant.userId !== user.id).map(participant => ({
+        notification: conversation.isGroup ? `${user.username} send a message in your group "${conversation.name}"` : `${user.username} send you a message`,
+        userId: participant.userId,
+    }))
+    console.log('otherUsers:', otherUsers)
+    const notification = await prisma.notifications.createMany({
+        data: otherUsers
     })
 
     if (file) {
