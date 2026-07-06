@@ -2,61 +2,131 @@ const { prisma } = require("../lib/prisma")
 
 async function createConversation(req, res) {
     const user = req.user
-    const {participantId} = req.body
+    const {participantsId, name} = req.body
+    const {conversationId} = req.params
+    const isGroup = participantsId.length !== 1
 
-    const oldConversation = await prisma.conversations.findFirst({
-        where: {
-            AND: [
-                    {participants: {
-                        some: {
-                            userId: user.id,
+    if (!isGroup) {
+        const oldConversation = await prisma.conversations.findFirst({
+            where: {
+                AND: [
+                    {
+                        participants: {
+                            some: {
+                                userId: user.id,
+                            },
                         },
-                    },},
-                    {participants: {
-                        some: {
-                            userId: participantId,
+                    },
+                    {
+                        participants: {
+                            some: {
+                                userId: participantsId[0],
+                            },
                         },
-                    },}
-            ],
-        },
-        include: {
-            participants: true
-        }
-    });
-
-    console.log('oldConversation:', oldConversation)
-
-    if (oldConversation) {
-        return res.json({
-            error: 'This conversation already exist'
-        })
-    }
-
-    const conversation = await prisma.conversations.create({
-        data: {
-            name: user.id + "+" + participantId,
-            participants: {
-                create: [
-                    { userId: user.id },
-                    { userId: participantId },
+                    },
                 ],
             },
-        },
-        include: {
-            participants: true
-        }
-    });
+            include: {
+                participants: true,
+            },
+        });
 
-    const notifications = await prisma.notifications.create({
-        data: {
-            notification: `${user.username} open a conversation with you`,
-            user: {
-                connect: {id: participantId}
+        console.log("oldConversation:", oldConversation);
+
+        if (oldConversation) {
+            return res.json({
+                error: "This conversation already exist",
+            });
+        }
+    } else {
+        const isYourFriends = await prisma.friendship.findMany({
+            where: {
+                OR: [
+                    {
+                        userIdOne: user.id,
+                        userIdTwo: {
+                            in: participantsId,
+                        },
+                        status: "FRIEND",
+                    },
+                    {
+                        userIdTwo: user.id,
+                        userIdOne: {
+                            in: participantsId,
+                        },
+                        status: "FRIEND",
+                    },
+                ],
+            },
+        });
+        console.log("isYourFriends:", isYourFriends);
+        console.log("participantsId:", participantsId);
+        if (isYourFriends.length !== participantsId.length)
+            return res
+                .status(400)
+                .json({ msg: "you can make a group only with yours friends" });
+    }
+
+    const conversation = await prisma.conversations.upsert({
+        where: {
+            id: conversationId || '',
+            participants: {
+                some: {
+                    userId: user.id,
+                    role: 'ADMIN',
+                },
+            },
+        },
+        update: {
+            name,
+            participants: {
+                deleteMany: {
+                    userId:{
+                        notIn: participantsId.concat(user.id)
+                    }
+                },
+                createMany: {
+                    data: participantsId.map(participant => ({userId: participant, role: 'MEMBERS'})),
+                    skipDuplicates: true,
+                },
             }
         },
+        create: {
+            name: name ? name : user.id + '+' + participantsId[0],
+            isGroup: isGroup ? true : false,
+            participants: {
+                create: participantsId.concat(user.id).map(participant => ({userId: participant, role: (participant === user.id && isGroup) ? 'ADMIN' : 'MEMBERS'})),
+            }
+        },
+        
+        include: {
+            participants: {
+                where: {
+                    NOT: {
+                        userId: user.id
+                    }
+                },
+                include: {
+                    user: {
+                        omit: {
+                            password: true
+                        }
+                    }
+                }
+            },
+        }
     })
 
-    console.log('conversation:', conversation)
+    const notificationsArrays = conversation.participants.map(participant => ({
+        notification: conversation.isGroup ? `${user.username} created a group named ${conversation.name} with you` : `${user.username} open a conversation with you`,
+        userId: participant.userId
+    }))
+
+    const notifications = await prisma.notifications.createMany({
+        data: notificationsArrays
+    })
+
+    console.log('conversation: make', conversation)
     res.json({conversation, msg: 'new conversation created'})
 }
 
@@ -64,7 +134,12 @@ async function readConversation(req, res) {
     const {conversationId} = req.params
     const conversation = await prisma.conversations.findUnique({
         where: {
-            id: conversationId
+            id: conversationId,
+            participants: {
+                some: {
+                    userId: req.user.id
+                }
+            }
         },
         include: {
             participants: true,
@@ -89,7 +164,12 @@ async function deleteConversation(req, res) {
     const {conversationId} = req.params
     const conversation = await prisma.conversations.findUnique({
         where: {
-            id: conversationId
+            id: conversationId,
+            participants: {
+                some: {
+                    userId: req.user.id
+                }
+            }
         }
     })
     if(!conversation) return res.status(404).json({msg: 'this conversation doesn\'t exists'})
@@ -126,7 +206,11 @@ async function getAllConversations(req, res) {
                     },
                 },
                 include: {
-                    user: true
+                    user: {
+                        omit: {
+                            password: true,
+                        }
+                    }
                 }
             },
         },

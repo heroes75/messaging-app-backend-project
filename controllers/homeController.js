@@ -12,12 +12,43 @@ module.exports = async function homeController(req, res) {
         },
         include: {
             conversations: true,
-            friendFirst: true,
-            friendSecond: true,
+            friendFirst: {
+                where: {
+                    status: 'FRIEND'
+                },
+                omit: {
+                    userIdOne: true
+                },
+                include: {
+                    friendSecond: {
+                        omit: {
+                            password: true
+                        }
+                    }
+                }
+            },
+            friendSecond: {
+                where: {
+                    status: 'FRIEND'
+                },
+                omit: {
+                    userIdTwo: true
+                },
+                include: {
+                    friendFirst: {
+                        omit: {
+                            password: true
+                        }
+                    }
+                }
+            },
             profile: true,
             notifications: true,
         }
     })
+
+    user.friendFirst = user.friendFirst.map(friend => friend.friendSecond)
+    user.friendSecond = user.friendSecond.map(friend => friend.friendFirst)
     console.log('user:', user)
     res.json({user})
 }
