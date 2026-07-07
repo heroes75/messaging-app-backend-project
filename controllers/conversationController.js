@@ -3,7 +3,6 @@ const { prisma } = require("../lib/prisma")
 async function createConversation(req, res) {
     const user = req.user
     const {participantsId, name} = req.body
-    const {conversationId} = req.params
     const isGroup = participantsId.length !== 1
 
     if (!isGroup) {
@@ -39,59 +38,11 @@ async function createConversation(req, res) {
             });
         }
     } else {
-        const isYourFriends = await prisma.friendship.findMany({
-            where: {
-                OR: [
-                    {
-                        userIdOne: user.id,
-                        userIdTwo: {
-                            in: participantsId,
-                        },
-                        status: "FRIEND",
-                    },
-                    {
-                        userIdTwo: user.id,
-                        userIdOne: {
-                            in: participantsId,
-                        },
-                        status: "FRIEND",
-                    },
-                ],
-            },
-        });
-        console.log("isYourFriends:", isYourFriends);
-        console.log("participantsId:", participantsId);
-        if (isYourFriends.length !== participantsId.length)
-            return res
-                .status(400)
-                .json({ msg: "you can make a group only with yours friends" });
+        if(!isYourFriends(participantsId, user.id)) return res.status(400).json({ msg: "you can make a group only with yours friends" });
     }
 
-    const conversation = await prisma.conversations.upsert({
-        where: {
-            id: conversationId || '',
-            participants: {
-                some: {
-                    userId: user.id,
-                    role: 'ADMIN',
-                },
-            },
-        },
-        update: {
-            name,
-            participants: {
-                deleteMany: {
-                    userId:{
-                        notIn: participantsId.concat(user.id)
-                    }
-                },
-                createMany: {
-                    data: participantsId.map(participant => ({userId: participant, role: 'MEMBERS'})),
-                    skipDuplicates: true,
-                },
-            }
-        },
-        create: {
+    const conversation = await prisma.conversations.create({
+        data: {
             name: name ? name : user.id + '+' + participantsId[0],
             isGroup: isGroup ? true : false,
             participants: {
@@ -119,7 +70,7 @@ async function createConversation(req, res) {
 
     const notificationsArrays = conversation.participants.map(participant => ({
         notification: conversation.isGroup ? `${user.username} created a group named ${conversation.name} with you` : `${user.username} open a conversation with you`,
-        userId: participant.userId
+        userId: participant.userId,
     }))
 
     const notifications = await prisma.notifications.createMany({
@@ -127,7 +78,64 @@ async function createConversation(req, res) {
     })
 
     console.log('conversation: make', conversation)
-    res.json({conversation, msg: 'new conversation created'})
+    res.json({conversation})
+}
+
+async function updateConversation(req, res) {
+    const user = req.user
+    const {participantsId, name} = req.body
+    const {conversationId} = req.params
+
+    const conversation = await prisma.conversations.findUnique({
+        where: {
+            id: conversationId,
+            participants: {
+                some: {
+                    userId: {
+                        in: participantsId
+                    },
+                    role: 'ADMIN'
+                }
+            }
+        }
+    })
+
+    console.log('conversation:', conversation)
+    if(conversation) return res.status(404).json({error: 'this group don\'t exist'})
+    if(!isYourFriends(participantsId, user.id)) return res.status(400).json({ msg: "you can make a group only with yours friends" });
+    
+    const updatedConversation = await prisma.conversations.update({
+        where: {
+            id: conversationId,
+        },
+        data: {
+            name,
+            participants: {
+                deleteMany: {
+                    userId:{
+                        notIn: participantsId.concat(user.id)
+                    }
+                },
+                createMany: {
+                    data: participantsId.map(participant => ({userId: participant, role: 'MEMBERS'})),
+                    skipDuplicates: true,
+                },
+            }
+        },
+        include: {
+            participants: {
+                include: {
+                    user: {
+                        omit: {
+                            password: true
+                        }
+                    }
+                }
+            }
+        }
+    })
+
+    res.json({conversation: updatedConversation})
 }
 
 async function readConversation(req, res) {
@@ -148,7 +156,12 @@ async function readConversation(req, res) {
                     createdAt: 'asc'
                 },
                 include: {
-                    MessageAttachments: true
+                    MessageAttachments: true,
+                    user: {
+                        omit: {
+                            password: true
+                        }
+                    }
                 }
             }
         },
@@ -200,11 +213,6 @@ async function getAllConversations(req, res) {
         },
         include: {
             participants: {
-                where: {
-                    NOT: {
-                        userId: user.id,
-                    },
-                },
                 include: {
                     user: {
                         omit: {
@@ -220,9 +228,37 @@ async function getAllConversations(req, res) {
     res.json({conversations})
 }
 
+async function isYourFriends(participantsId, userId) {
+    const isYourFriend = await prisma.friendship.findMany({
+        where: {
+            OR: [
+                {
+                    userIdOne: userId,
+                    userIdTwo: {
+                        in: participantsId,
+                    },
+                    status: "FRIEND",
+                },
+                {
+                    userIdTwo: userId,
+                    userIdOne: {
+                        in: participantsId,
+                    },
+                    status: "FRIEND",
+                },
+            ],
+        },
+    });
+    console.log("isYourFriends:", isYourFriend);
+    console.log("participantsId:", participantsId);
+    if (isYourFriend.length !== participantsId.length) return false;
+    return true;
+}
+
 module.exports = {
     createConversation,
     readConversation,
     deleteConversation,
     getAllConversations,
+    updateConversation,
 }
