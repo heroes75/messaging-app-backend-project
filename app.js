@@ -18,18 +18,29 @@ const groupRouter = require('./routes/groupRouter')
 
 const app = express()
 const server = createServer(app)
-const io = new Server(server, {
-    cors: {
-        origin: ['http://localhost:5173', 'http://127.0.0.1:5173']
-    }
-})
+
+
 
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 app.use(cors())
 passport.use(jwtStrategy)
 
+const io = new Server(server)
+
+io.engine.use((req, res, next) => {
+    const isHandshake = req._query.sid === undefined
+    if(isHandshake) {
+        passport.authenticate('jwt', {session: false})(req, res ,next);
+    } else {
+        next()
+    }
+})
+
+
 io.on('connection', (socket) => {
+    const userId = socket.request.user.id;
+    console.log('userId:', userId)
     console.log('a user connected')
 })
 
@@ -44,5 +55,5 @@ app.use('/user', passport.authenticate('jwt', {session: false}), searchUserRoute
 app.use('/groups', passport.authenticate('jwt', {session: false}), groupRouter)
 
 server.listen(process.env.PORT, () => {
-    console.log(`listen ot port  http://localhost:${process.env.PORT}`)
+    console.log(`listen on port  http://localhost:${process.env.PORT}`)
 })

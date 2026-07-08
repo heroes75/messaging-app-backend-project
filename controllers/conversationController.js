@@ -10,14 +10,12 @@ const validateConversation = body('participantsId')
     .isArray({min: 1}).withMessage('you need at least one participant to create a conversation')
 
 const validateGroup = body('participantsId')
-    .isArray({min: 2}).withMessage('you need at least two participant to create a group')
+    .isArray({min: 2}).withMessage('you need at least two participant to create or update a group')
 
 async function createConversation(req, res) {
     const user = req.user
     const result = validationResult(req)
-    console.log('result:', result)
     const errors = result.array()
-    console.log('errors:', errors)
     if (!result.isEmpty()) {
         return res.status(400).json({errors})
     }
@@ -98,7 +96,13 @@ async function createConversation(req, res) {
 
 async function updateConversation(req, res) {
     const user = req.user
-    const {participantsId, name} = req.body
+    const result = validationResult(req)
+    const errors = result.array()
+    if (!result.isEmpty()) {
+        return res.status(400).json({errors})
+    }
+
+    const {participantsId, name} = matchedData(req)
     const {conversationId} = req.params
 
     const conversation = await prisma.conversations.findUnique({
