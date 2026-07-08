@@ -6,7 +6,7 @@ const { createMessage, editMessage, deleteMessage, validateFiles, validateMessag
 const conversationRouter = Router()
 
 conversationRouter.get('/', conversationController.getAllConversations)
-conversationRouter.post('/', conversationController.createConversation)
+conversationRouter.post('/', conversationController.validateName, conversationController.validateConversation, conversationController.createConversation)
 conversationRouter.get('/:conversationId', conversationController.readConversation)
 conversationRouter.put('/:conversationId', conversationController.updateConversation)
 conversationRouter.delete('/:conversationId', conversationController.deleteConversation)

@@ -1,10 +1,30 @@
+const { body, validationResult, matchedData } = require("express-validator")
 const { prisma } = require("../lib/prisma")
+
+const validateName = body('name')
+    .isString().withMessage('your name must be a string')
+    .optional()
+    // .notEmpty().withMessage('Your name must be not empty')
+
+const validateConversation = body('participantsId')
+    .isArray({min: 1}).withMessage('you need at least one participant to create a conversation')
+
+const validateGroup = body('participantsId')
+    .isArray({min: 2}).withMessage('you need at least two participant to create a group')
 
 async function createConversation(req, res) {
     const user = req.user
-    const {participantsId, name} = req.body
-    const isGroup = participantsId.length !== 1
+    const result = validationResult(req)
+    console.log('result:', result)
+    const errors = result.array()
+    console.log('errors:', errors)
+    if (!result.isEmpty()) {
+        return res.status(400).json({errors})
+    }
 
+    const {participantsId, name} = matchedData(req)
+    console.log('{participantsId, name:', participantsId, name)
+    const isGroup = participantsId.length !== 1
     if (!isGroup) {
         const oldConversation = await prisma.conversations.findFirst({
             where: {
@@ -52,11 +72,6 @@ async function createConversation(req, res) {
         
         include: {
             participants: {
-                where: {
-                    NOT: {
-                        userId: user.id
-                    }
-                },
                 include: {
                     user: {
                         omit: {
@@ -68,7 +83,7 @@ async function createConversation(req, res) {
         }
     })
 
-    const notificationsArrays = conversation.participants.map(participant => ({
+    const notificationsArrays = conversation.participants.filter(participant => participant.userId !== user.id).map(participant => ({
         notification: conversation.isGroup ? `${user.username} created a group named ${conversation.name} with you` : `${user.username} open a conversation with you`,
         userId: participant.userId,
     }))
@@ -91,17 +106,15 @@ async function updateConversation(req, res) {
             id: conversationId,
             participants: {
                 some: {
-                    userId: {
-                        in: participantsId
-                    },
+                    userId: user.id,
                     role: 'ADMIN'
                 }
             }
         }
     })
 
-    console.log('conversation:', conversation)
-    if(conversation) return res.status(404).json({error: 'this group don\'t exist'})
+    console.log('conversation: in update', conversation)
+    if(!conversation) return res.status(404).json({error: 'this group don\'t exist'})
     if(!isYourFriends(participantsId, user.id)) return res.status(400).json({ msg: "you can make a group only with yours friends" });
     
     const updatedConversation = await prisma.conversations.update({
@@ -135,6 +148,7 @@ async function updateConversation(req, res) {
         }
     })
 
+    console.log('updatedConversation:', updatedConversation)
     res.json({conversation: updatedConversation})
 }
 
@@ -180,8 +194,9 @@ async function deleteConversation(req, res) {
             id: conversationId,
             participants: {
                 some: {
-                    userId: req.user.id
-                }
+                    userId: req.user.id,
+                    role: 'ADMIN'
+                },
             }
         }
     })
@@ -192,7 +207,7 @@ async function deleteConversation(req, res) {
                 id: conversationId,
             },
         });
-        res.json({deleteConversation, msg: 'conversation deleted'})
+        res.json({conversation: deleteConversation, msg: 'conversation deleted'})
     } catch (error) {
         console.error( error)
         res.status(500).json({msg: "Server Error"})
@@ -261,4 +276,7 @@ module.exports = {
     deleteConversation,
     getAllConversations,
     updateConversation,
+    validateConversation,
+    validateName,
+    validateGroup,
 }
