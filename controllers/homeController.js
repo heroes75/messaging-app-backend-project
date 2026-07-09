@@ -49,6 +49,5 @@ module.exports = async function homeController(req, res) {
 
     user.friendFirst = user.friendFirst.map(friend => friend.friendSecond)
     user.friendSecond = user.friendSecond.map(friend => friend.friendFirst)
-    console.log('user:', user)
     res.json({user})
 }

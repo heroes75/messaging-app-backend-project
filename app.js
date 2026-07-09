@@ -15,6 +15,7 @@ const verifyToken = require('./utils/verifyToken')
 const profileRouter = require('./routes/profileRouter')
 const searchUserRouter = require('./routes/searchUserRouter')
 const groupRouter = require('./routes/groupRouter')
+const { prisma } = require('./lib/prisma')
 
 const app = express()
 const server = createServer(app)
@@ -26,8 +27,13 @@ app.use(express.urlencoded({extended: true}))
 app.use(cors())
 passport.use(jwtStrategy)
 
-const io = new Server(server)
+// const io = new Server(server)
 
+const io = new Server(server, {
+    cors: {
+       origin: ['http://localhost:5173', 'http://127.0.0.1:5173']
+   }
+})
 io.engine.use((req, res, next) => {
     const isHandshake = req._query.sid === undefined
     if(isHandshake) {
@@ -38,13 +44,32 @@ io.engine.use((req, res, next) => {
 })
 
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
+    const username = socket.request.user.username;
     const userId = socket.request.user.id;
-    console.log('userId:', userId)
-    console.log('a user connected')
+    console.log('USER ' + username + ' connected')
+    socket.join(`user:${username}`);
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId
+        },
+        include: {
+            conversations: true
+        }
+    })
+    user.conversations.forEach(conversation => socket.join(`conversation:${conversation.conversationId}`))
+    socket.on('try', (msg) => {
+        console.log('msg:', msg)
+    })
+    socket.on('message', (message) => {
+        console.log('message:', message)
+        socket.to(`conversation:${message.conversationId}`).emit('message', message)
+        // socket.broadcast.emit('message', message)
+    })
 })
 
-app.use('/', homeRouter)
+
+app.use('/', verifyToken, homeRouter)
 app.use('/signup', signupRouter)
 app.use('/login', loginRouter)
 app.use('/conversation', passport.authenticate('jwt', {session: false}), conversationRouter)

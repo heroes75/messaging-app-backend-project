@@ -1,5 +1,5 @@
 const { body, validationResult, matchedData } = require("express-validator")
-const { prisma } = require("../lib/prisma")
+const { prisma } = require("../lib/prisma");
 
 
 const validateMessage = body("message").notEmpty().isString().withMessage("your message must be a string");
@@ -59,6 +59,11 @@ async function createMessage(req, res) {
             },
             include: {
                 MessageAttachments: true,
+                user: {
+                    omit: {
+                        password: true
+                    }
+                }
             },
         });
         return res.json({ message: createdMessage });
@@ -71,7 +76,12 @@ async function createMessage(req, res) {
             userId: user.id,
         },
         include: {
-            MessageAttachments: true
+            MessageAttachments: true,
+            user: {
+                omit: {
+                    password: true
+                }
+            }
         }
     })
 

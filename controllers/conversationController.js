@@ -243,7 +243,6 @@ async function getAllConversations(req, res) {
         },
     });
 
-    console.log('conversations:', conversations)
     res.json({conversations})
 }
 
@@ -268,8 +267,6 @@ async function isYourFriends(participantsId, userId) {
             ],
         },
     });
-    console.log("isYourFriends:", isYourFriend);
-    console.log("participantsId:", participantsId);
     if (isYourFriend.length !== participantsId.length) return false;
     return true;
 }
