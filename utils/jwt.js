@@ -18,6 +18,7 @@ module.exports = new JwtStrategy(opts, async function(jwt_payload, done) {
         }
     })
 
+    // console.log('user: in verify token', user)
     if(!user) return done(null, false)
     return done(null, user)
 })

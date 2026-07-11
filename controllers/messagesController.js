@@ -9,14 +9,12 @@ const validateFiles = body("file").optional().isObject().withMessage("your files
 async function createMessage(req, res) {
     const user = req.user
     const {conversationId} = req.params
-    console.log('conversationId:', conversationId)
     const result = validationResult(req)
     const errors = result.array()
     if (!result.isEmpty()) {
         return res.status(401).json({msg: errors})
     }
     const {message, file} = matchedData(req)
-    console.log('message, file:', message, file)
     const conversation = await prisma.conversations.findUnique({
         where: {
             id: conversationId,
@@ -38,7 +36,7 @@ async function createMessage(req, res) {
         userId: participant.userId,
     }))
     console.log('otherUsers:', otherUsers)
-    const notification = await prisma.notifications.createMany({
+    const notifications = await prisma.notifications.createManyAndReturn({
         data: otherUsers
     })
 
@@ -66,7 +64,7 @@ async function createMessage(req, res) {
                 }
             },
         });
-        return res.json({ message: createdMessage });
+        return res.json({ message: createdMessage, notifications });
     }
 
     const createdMessage = await prisma.message.create({
@@ -86,7 +84,7 @@ async function createMessage(req, res) {
     })
 
     console.log('createdMessage:', createdMessage)
-    res.json({message: createdMessage})
+    res.json({message: createdMessage, notifications })
 }
 
 async function editMessage(req, res) {

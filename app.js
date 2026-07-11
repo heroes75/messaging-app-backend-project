@@ -31,7 +31,7 @@ passport.use(jwtStrategy)
 
 const io = new Server(server, {
     cors: {
-       origin: ['http://localhost:5173', 'http://127.0.0.1:5173']
+       origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174']
    }
 })
 io.engine.use((req, res, next) => {
@@ -49,22 +49,34 @@ io.on('connection', async (socket) => {
     const userId = socket.request.user.id;
     console.log('USER ' + username + ' connected')
     socket.join(`user:${username}`);
+    socket.join(`user:${userId}`);
     const user = await prisma.user.findUnique({
         where: {
             id: userId
         },
         include: {
-            conversations: true
+            conversations: true,
+            notifications: true
         }
     })
     user.conversations.forEach(conversation => socket.join(`conversation:${conversation.conversationId}`))
-    socket.on('try', (msg) => {
-        console.log('msg:', msg)
-    })
-    socket.on('message', (message) => {
-        console.log('message:', message)
+    socket.on('message', (message, notifications) => {
+        console.log('notifications:', notifications)
+        notifications.forEach(notification => socket.to(`user:${notification.userId}`).emit('notifications', notification))
         socket.to(`conversation:${message.conversationId}`).emit('message', message)
         // socket.broadcast.emit('message', message)
+    })
+    socket.on('friendFirst', (friendStatus, notification) => {
+        console.log('notification: first', notification)
+        console.log('friendStatus: first', friendStatus)
+        socket.to(`user:${friendStatus.userIdOne}`).emit('friendSecond', friendStatus)
+        socket.to(`user:${notification.userId}`).emit('notifications', notification)
+    })
+    socket.on('friendSecond', (friendStatus, notification) => {
+        console.log('notification: second', notification)
+        console.log('friendStatus: second', friendStatus)
+        socket.to(`user:${friendStatus.userIdTwo}`).emit('friendFirst', friendStatus)
+        socket.to(`user:${notification.userId}`).emit('notifications', notification)
     })
 })
 

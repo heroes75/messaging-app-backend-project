@@ -55,7 +55,7 @@ async function askFriend(req, res) {
         }
     })
 
-    res.json({friendship: FriendDemand})
+    res.json({friendship: FriendDemand, notification})
 }
 
 async function updateFriendship(req, res) {
@@ -83,8 +83,16 @@ async function updateFriendship(req, res) {
                 status: friendshipStatus
             },
             include: {
-                friendFirst: true,
-                friendSecond: true,
+                friendFirst: {
+                    omit: {
+                        password: true,
+                    }
+                },
+                friendSecond: {
+                    omit: {
+                        password: true
+                    }
+                },
             }
         })
         const notification = await prisma.notifications.create({
@@ -93,7 +101,7 @@ async function updateFriendship(req, res) {
                 notification: `your friendship status with ${user.username} is ${friendshipStatus} `
             }
         })
-        return res.json({friendship: updateFriendship})
+        return res.json({friendship: updateFriendship, notification})
     }
 
     res.status(401).json({error: 'Unauthorized'})
