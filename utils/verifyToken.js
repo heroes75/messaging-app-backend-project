@@ -1,14 +1,14 @@
 const jwt = require("jsonwebtoken")
 
 module.exports = function verifyToken(req, res, next) {
-        console.log('req.url:', req.url)
+        // console.log('req.url:', req.url)
     if(req.url === '/login') return next()
     const headers = req.headers.authorization
     if(!headers) return res.status(500).json({errors: 'Invalid Json'})
     const bearer = headers.split(' ')
-    console.log('bearer:', bearer)
+    // console.log('bearer:', bearer)
     const token = bearer[1]
-    console.log('token:', token)
+    // console.log('token:', token)
     if(!token || token === 'null'){ 
         return res.json({user: undefined})
     }

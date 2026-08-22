@@ -2,7 +2,7 @@ const { prisma } = require("../lib/prisma");
 
 module.exports = async function homeController(req, res) {
     if(!req.user) return res.status(303).json({url: '/login'})
-    console.log('req.user:', req.user)
+    // console.log('req.user:', req.user)
     const user = await prisma.user.findUnique({
         where: {
             id: req.user.id
@@ -50,4 +50,5 @@ module.exports = async function homeController(req, res) {
     user.friendFirst = user.friendFirst.map(friend => friend.friendSecond)
     user.friendSecond = user.friendSecond.map(friend => friend.friendFirst)
     res.json({user})
+    // console.log('user:', user)
 }

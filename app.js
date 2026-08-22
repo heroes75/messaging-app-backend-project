@@ -16,10 +16,15 @@ const profileRouter = require('./routes/profileRouter')
 const searchUserRouter = require('./routes/searchUserRouter')
 const groupRouter = require('./routes/groupRouter')
 const { prisma } = require('./lib/prisma')
+const { ExpressPeerServer } = require('peer')
 
 const app = express()
 const server = createServer(app)
+const prePeerServer = app.listen(3001)
 
+const peerServer = ExpressPeerServer(prePeerServer, {
+    path: '/'
+})
 
 
 app.use(express.json())
@@ -27,7 +32,6 @@ app.use(express.urlencoded({extended: true}))
 app.use(cors())
 passport.use(jwtStrategy)
 
-// const io = new Server(server)
 
 const io = new Server(server, {
     cors: {
@@ -43,11 +47,14 @@ io.engine.use((req, res, next) => {
     }
 })
 
+peerServer.on("connection", (client) => {
+  console.log("Connected: ", client.getId());
+});
 
 io.on('connection', async (socket) => {
     const username = socket.request.user.username;
     const userId = socket.request.user.id;
-    console.log('USER ' + username + ' connected')
+    // console.log('USER ' + username + ' connected')
     socket.join(`user:${username}`);
     socket.join(`user:${userId}`);
     const user = await prisma.user.findUnique({
@@ -67,8 +74,8 @@ io.on('connection', async (socket) => {
         // socket.broadcast.emit('message', message)
     })
     socket.on('friendFirst', (friendStatus, notification) => {
-        console.log('notification: first', notification)
-        console.log('friendStatus: first', friendStatus)
+        console.log('notification first:', notification)
+        console.log('friendStatus first:', friendStatus)
         socket.to(`user:${friendStatus.userIdOne}`).emit('friendSecond', friendStatus)
         socket.to(`user:${notification.userId}`).emit('notifications', notification)
     })
@@ -78,18 +85,33 @@ io.on('connection', async (socket) => {
         socket.to(`user:${friendStatus.userIdTwo}`).emit('friendFirst', friendStatus)
         socket.to(`user:${notification.userId}`).emit('notifications', notification)
     })
+    socket.on('call', (hash, conversationId, {username, id}) => {
+        // console.log('hash, conversationId, {username, id}:', hash, conversationId, {username, id})
+        socket.to(`conversation:${conversationId}`).emit('calling', hash, {username, id})
+    })
+
+    socket.on('responseCall', (response, callerId) => {
+        socket.to(`user:${callerId}`).emit('response', response, callerId)
+    })
+
+    socket.on('video-connected', (conversationId, id) => {
+        console.log('conversationId, id:', conversationId, userId)
+        socket.to(`conversation:${conversationId}`).emit('video-connected', userId)
+    })
+
 })
 
 
+app.use('/peerjs', peerServer)
 app.use('/', verifyToken, homeRouter)
 app.use('/signup', signupRouter)
 app.use('/login', loginRouter)
-app.use('/conversation', passport.authenticate('jwt', {session: false}), conversationRouter)
-app.use('/friendship', passport.authenticate('jwt', {session: false}), friendshipRouter)
-app.use('/notification', passport.authenticate('jwt', {session: false}), notificationRouter)
-app.use('/profile', passport.authenticate('jwt', {session: false}), profileRouter)
 app.use('/user', passport.authenticate('jwt', {session: false}), searchUserRouter)
 app.use('/groups', passport.authenticate('jwt', {session: false}), groupRouter)
+app.use('/profile', passport.authenticate('jwt', {session: false}), profileRouter)
+app.use('/friendship', passport.authenticate('jwt', {session: false}), friendshipRouter)
+app.use('/conversation', passport.authenticate('jwt', {session: false}), conversationRouter)
+app.use('/notification', passport.authenticate('jwt', {session: false}), notificationRouter)
 
 server.listen(process.env.PORT, () => {
     console.log(`listen on port  http://localhost:${process.env.PORT}`)
