@@ -35,7 +35,7 @@ passport.use(jwtStrategy)
 
 const io = new Server(server, {
     cors: {
-       origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://127.0.0.1:5174']
+       origin: '*'
    }
 })
 io.engine.use((req, res, next) => {
@@ -95,8 +95,12 @@ io.on('connection', async (socket) => {
     })
 
     socket.on('video-connected', (conversationId, id) => {
-        console.log('conversationId, id:', conversationId, userId)
+        console.log('conversationId, id:', conversationId, id)
         socket.to(`conversation:${conversationId}`).emit('video-connected', userId)
+    })
+    socket.on('video-disconnected', (conversationId, id) => {
+        console.log('video-disconnected :', conversationId, id)
+        socket.to(`conversation:${conversationId}`).emit('video-disconnected', id)
     })
 
 })
