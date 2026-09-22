@@ -85,9 +85,33 @@ io.on('connection', async (socket) => {
         socket.to(`user:${friendStatus.userIdTwo}`).emit('friendFirst', friendStatus)
         socket.to(`user:${notification.userId}`).emit('notifications', notification)
     })
-    socket.on('call', (hash, conversationId, {username, id}) => {
+    socket.on('call', async (hash, conversationId, {username, id}) => {
         // console.log('hash, conversationId, {username, id}:', hash, conversationId, {username, id})
-        socket.to(`conversation:${conversationId}`).emit('calling', hash, {username, id})
+        const conversation = await prisma.conversations.findUnique({
+            where: {
+                id: conversationId
+            },
+            include: {
+                participants: true
+            }
+        })
+        const [idOne, idTwo] = [conversation.participants[0].userId, conversation.participants[1].userId]
+        const [userIdOne, userIdTwo] = idOne < idTwo ? [idOne, idTwo] : [idTwo, idOne]
+        console.log('[userIdOne, userIdTwo]:', [userIdOne, userIdTwo])
+        const isFriend = await prisma.friendship.findUnique({
+            where: {
+                userIdOne_userIdTwo: {
+                    userIdOne,
+                    userIdTwo,
+                },
+                status: 'FRIEND',
+            }
+        })
+        console.log('isFriend:', isFriend)
+        if (isFriend || conversation.isGroup) {
+            socket.to(`conversation:${conversationId}`).emit('calling', hash, {username, id})
+        }
+        
     })
 
     socket.on('responseCall', (response, callerId) => {

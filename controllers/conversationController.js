@@ -188,7 +188,20 @@ async function readConversation(req, res) {
     if (!conversation) {
         return res.json({msg: 'This conversation doesn\'t exits'})
     }
-    res.json({conversation})
+    const [userIdOne, userIdTwo] = conversation.participants[0].userId < conversation.participants[1].userId?
+                                    [conversation.participants[0].userId, conversation.participants[1].userId]:
+                                    [conversation.participants[1].userId, conversation.participants[0].userId]
+    const isFriendship = await prisma.friendship.findUnique({
+        where: {
+            userIdOne_userIdTwo: {
+                userIdOne,
+                userIdTwo,
+            },
+            status: 'FRIEND'
+        }
+    })
+    const isAllowCall = !!isFriendship || conversation.isGroup 
+    res.json({conversation,isAllowCall })
 }
 
 async function deleteConversation(req, res) {
