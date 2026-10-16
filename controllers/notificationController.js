@@ -57,8 +57,22 @@ async function updateNotification(req, res) {
     res.json({notification: updatedNotification})
 }
 
+async function updateAllNotification(req, res) {
+    const user = req.user
+    const updateNotifications = await prisma.notifications.updateManyAndReturn({
+        where: {
+            userId: user.id
+        },
+        data: {
+            status: 'READ'
+        }
+    })
+    res.json({notifications: updateNotifications})
+}
+
 module.exports = {
     getAllNotifications,
     deleteNotif,
-    updateNotification
+    updateNotification,
+    updateAllNotification,
 }

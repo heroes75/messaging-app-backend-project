@@ -168,7 +168,18 @@ async function readConversation(req, res) {
             }
         },
         include: {
-            participants: true,
+            participants: {
+                include: {
+                    user: {
+                        omit: {
+                            password: true
+                        },
+                        include: {
+                            profile: true
+                        }
+                    }
+                }
+            },
             messages: {
                 orderBy: {
                     createdAt: 'asc'
@@ -249,6 +260,9 @@ async function getAllConversations(req, res) {
                     user: {
                         omit: {
                             password: true,
+                        },
+                        include: {
+                            profile: true
                         }
                     }
                 }

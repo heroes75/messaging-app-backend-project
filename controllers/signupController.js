@@ -65,6 +65,7 @@ async function signupController(req, res) {
             profile: {create: {}}
         }
     })
+    console.log('user:', user)
     return res.json({user})
 }
 

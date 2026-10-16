@@ -25,17 +25,17 @@ model User {
 }
 
 model Profile {
-    id        String @id @default(cuid())
+    id        String @id @default(cuid(2))
     user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId    String @unique
-    imageUrl  String @default("") @db.VarChar(255)
+    imageUrl  String @default("https://res.cloudinary.com/dlroxhny0/image/upload/q_auto:low/dpr_4.0/f_webp/istockphoto-2285299383-1024x1024_jahjuv.jpg") @db.VarChar(255)
     lastName  String @default("")
     firstName String @default("")
     bio       String @default("") @db.Text
 }
 
 model Conversations {
-    id           String         @id @default(cuid())
+    id           String         @id @default(cuid(2))
     name         String         @db.VarChar(255)
     isGroup      Boolean        @default(false)
     participants Participants[]
@@ -54,7 +54,7 @@ model Participants {
 }
 
 model Notifications {
-    id           String               @id @default(cuid())
+    id           String               @id @default(cuid(2))
     notification String               @db.VarChar(255)
     user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId       String
@@ -63,7 +63,7 @@ model Notifications {
 }
 
 model Message {
-    id                 String              @id @default(cuid())
+    id                 String              @id @default(cuid(2))
     message            String              @db.Text
     user               User                @relation(references: [id], fields: [userId], onDelete: Cascade)
     userId             String
@@ -74,7 +74,7 @@ model Message {
 }
 
 model MessageAttachment {
-    id             String  @id @default(cuid())
+    id             String  @id @default(cuid(2))
     messageId      String  @unique
     message        Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
     attachmentUrl  String
